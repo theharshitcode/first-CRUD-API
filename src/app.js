@@ -49,4 +49,29 @@ app.post("/tasks", (req, res) => {
     res.status(201).json(task);
 })
 
+
+app.put("/tasks/:id", (req,res)=>{
+    const tId = Number(req.params.id);
+    const {title,done} = req.body;
+    const task = tasks.find(t => t.id == tId);
+    if(!task){
+        res.status(404).json({"error":"Tasks Not Found Us!"});
+    }else if(typeof title != "string" || !title.trim()){
+        res.status(400).json({"error" : "Plz enter a  Valid Title"});
+    }
+
+   if (title !== undefined) task.title = title.trim();
+    if (done !== undefined) task.done = done;
+     res.status(200).json(task);
+})
+
+app.delete("/tasks/:id",(req,res)=>{
+    const tId = Number(req.params.id);
+    const index = tasks.findIndex(t => t.id === tId);
+    if(!index){
+        res.status(404).json({"error":"Task not found"});
+    }
+    tasks.splice(index);
+    res.status(204).json({"status":"Done"});
+})
 module.exports = app;
