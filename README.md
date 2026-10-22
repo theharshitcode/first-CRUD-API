@@ -5,6 +5,12 @@ A simple REST API for managing tasks, built with Node.js and Express.js as part 
 The API supports creating, reading, updating, and deleting tasks. It uses in-memory storage and provides interactive API documentation through Swagger UI.
 
 <img width="1573" height="857" alt="Screenshot 2026-10-22 130520" src="https://github.com/user-attachments/assets/bbcce623-515a-43b7-9f3c-5211209a83a3" />
+<img width="1917" height="1018" alt="Screenshot 2026-10-22 130542" src="https://github.com/user-attachments/assets/1747c0aa-80e1-4b04-adaa-1b8447263516" />
+<img width="892" height="791" alt="Screenshot 2026-10-22 130644" src="https://github.com/user-attachments/assets/e882d163-f762-4aa1-9a54-18d47ebe9b24" />
+<img width="895" height="857" alt="Screenshot 2026-10-22 130716" src="https://github.com/user-attachments/assets/29322263-9a92-42b8-adc1-ee060b87cc0a" />
+<img width="892" height="672" alt="Screenshot 2026-10-22 130734" src="https://github.com/user-attachments/assets/9ee25b7f-de17-43fb-af18-aea39f19a619" />
+<img width="883" height="822" alt="Screenshot 2026-10-22 130745" src="https://github.com/user-attachments/assets/d6dd1c50-dd25-45eb-9dad-f94c26040c1a" />
+<img width="888" height="585" alt="Screenshot 2026-10-22 130755" src="https://github.com/user-attachments/assets/4761c2ad-dc5b-4235-b7e4-45ec84670b91" />
 
 
 ## Features
