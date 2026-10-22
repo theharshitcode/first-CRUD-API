@@ -32,4 +32,5 @@ if (result.total === 0) {
 }
 
 console.log("SQLite database ready.");
-db.close();
+
+module.exports = db;

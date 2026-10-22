@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const swaggerUi = require("swagger-ui-express");
 const openapiSpec = require("../docs/openapi.json");
+const db = require("./database");
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
@@ -18,24 +19,35 @@ app.get("/", (req, res) => {
     res.json({ "name": "Task API", "version": "1.0", "endpoints": ["/tasks"] });
 })
 
-app.get("/health", (req, res) => {
-    res.json({ "status": "ok" });
-})
-
 app.get("/tasks", (req, res) => {
-    res.json({ tasks: tasks });
-})
+  const tasks = db.prepare(
+    "SELECT * FROM tasks ORDER BY id"
+  ).all();
+
+  res.status(200).json(tasks);
+});
 
 app.get("/tasks/:id", (req, res) => {
-    const taskid = req.params.id;
-    const task = tasks.find(t => t.id == taskid);
+  const id = Number(req.params.id);
 
-    if (!task) {
-        res.json({ "status": "404 Not Found" });
-    }
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(404).json({
+      error: "Task not found"
+    });
+  }
 
-    res.json(task);
-})
+  const task = db.prepare(
+    "SELECT * FROM tasks WHERE id = ?"
+  ).get(id);
+
+  if (!task) {
+    return res.status(404).json({
+      error: "Task not found"
+    });
+  }
+
+  res.status(200).json(task);
+});
 
 app.post("/tasks", (req, res) => {
     const {title} = req.body;
