@@ -4,6 +4,7 @@ const swaggerUi = require("swagger-ui-express");
 const openapiSpec = require("../docs/openapi.json");
 const db = require("./database");
 
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 app.use(express.json());
@@ -29,142 +30,175 @@ app.get("/", (req, res) => {
     res.json({ "name": "Task API", "version": "1.0", "endpoints": ["/tasks"] });
 })
 
-app.get("/tasks", (req, res) => {
-  const tasks = db.prepare(
-    "SELECT * FROM tasks ORDER BY id"
-  ).all();
 
-  res.status(200).json(tasks);
+app.get("/tasks", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM tasks ORDER BY id"
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-app.get("/tasks/:id", (req, res) => {
-  const id = Number(req.params.id);
+app.get("/tasks/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
 
-  if (!Number.isInteger(id) || id <= 0) {
-    return res.status(404).json({
-      error: "Task not found"
-    });
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM tasks WHERE id = $1",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  const task = db.prepare(
-    "SELECT * FROM tasks WHERE id = ?"
-  ).get(id);
-
-  if (!task) {
-    return res.status(404).json({
-      error: "Task not found"
-    });
-  }
-
-  res.status(200).json(task);
 });
 
-
-// Convert SQLite's 0/1 into JavaScript's false/true
+const pool = require("./database");
 
 // POST /tasks
-app.post("/tasks", (req, res) => {
-  const { title } = req.body;
+app.post("/tasks", async (req, res) => {
+  try {
+    const { title } = req.body;
 
-  if (typeof title !== "string" || !title.trim()) {
-    return res.status(400).json({
-      error: "Title is required"
+    if (typeof title !== "string" || !title.trim()) {
+      return res.status(400).json({
+        error: "Title is required"
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO tasks (title, done)
+       VALUES ($1, $2)
+       RETURNING *`,
+      [title.trim(), false]
+    );
+
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Create task failed:", error.message);
+
+    return res.status(500).json({
+      error: "Internal server error"
     });
   }
-
-  const result = db.prepare(
-    "INSERT INTO tasks (title, done) VALUES (?, ?)"
-  ).run(title.trim(), 0);
-
-  const task = db.prepare(
-    "SELECT * FROM tasks WHERE id = ?"
-  ).get(result.lastInsertRowid);
-
-  return res.status(201).json(formatTask(task));
 });
 
 // PUT /tasks/:id
-app.put("/tasks/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const { title, done } = req.body;
+app.put("/tasks/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { title, done } = req.body;
 
-  if (!Number.isInteger(id) || id <= 0) {
-    return res.status(404).json({
-      error: "Task not found"
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(404).json({
+        error: "Task not found"
+      });
+    }
+
+    if (
+      title !== undefined &&
+      (typeof title !== "string" || !title.trim())
+    ) {
+      return res.status(400).json({
+        error: "Please enter a valid title"
+      });
+    }
+
+    if (done !== undefined && typeof done !== "boolean") {
+      return res.status(400).json({
+        error: "Done must be a boolean"
+      });
+    }
+
+    if (title === undefined && done === undefined) {
+      return res.status(400).json({
+        error: "Provide title or done to update"
+      });
+    }
+
+    const existing = await pool.query(
+      "SELECT * FROM tasks WHERE id = $1",
+      [id]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({
+        error: "Task not found"
+      });
+    }
+
+    const current = existing.rows[0];
+
+    const updatedTitle =
+      title !== undefined ? title.trim() : current.title;
+
+    const updatedDone =
+      done !== undefined ? done : current.done;
+
+    const result = await pool.query(
+      `UPDATE tasks
+       SET title = $1, done = $2
+       WHERE id = $3
+       RETURNING *`,
+      [updatedTitle, updatedDone, id]
+    );
+
+    return res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Update task failed:", error.message);
+
+    return res.status(500).json({
+      error: "Internal server error"
     });
   }
-
-  const existing = db.prepare(
-    "SELECT * FROM tasks WHERE id = ?"
-  ).get(id);
-
-  if (!existing) {
-    return res.status(404).json({
-      error: "Task not found"
-    });
-  }
-
-  if (
-    title !== undefined &&
-    (typeof title !== "string" || !title.trim())
-  ) {
-    return res.status(400).json({
-      error: "Please enter a valid title"
-    });
-  }
-
-  if (done !== undefined && typeof done !== "boolean") {
-    return res.status(400).json({
-      error: "Done must be a boolean"
-    });
-  }
-
-  if (title === undefined && done === undefined) {
-    return res.status(400).json({
-      error: "Provide title or done to update"
-    });
-  }
-
-  const updatedTitle =
-    title !== undefined ? title.trim() : existing.title;
-
-  const updatedDone =
-    done !== undefined ? Number(done) : existing.done;
-
-  db.prepare(`
-    UPDATE tasks
-    SET title = ?, done = ?
-    WHERE id = ?
-  `).run(updatedTitle, updatedDone, id);
-
-  const updatedTask = db.prepare(
-    "SELECT * FROM tasks WHERE id = ?"
-  ).get(id);
-
-  return res.status(200).json(formatTask(updatedTask));
 });
 
 // DELETE /tasks/:id
-app.delete("/tasks/:id", (req, res) => {
-  const id = Number(req.params.id);
+app.delete("/tasks/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
 
-  if (!Number.isInteger(id) || id <= 0) {
-    return res.status(404).json({
-      error: "Task not found"
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(404).json({
+        error: "Task not found"
+      });
+    }
+
+    const result = await pool.query(
+      "DELETE FROM tasks WHERE id = $1 RETURNING id",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: "Task not found"
+      });
+    }
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error("Delete task failed:", error.message);
+
+    return res.status(500).json({
+      error: "Internal server error"
     });
   }
-
-  const result = db.prepare(
-    "DELETE FROM tasks WHERE id = ?"
-  ).run(id);
-
-  if (result.changes === 0) {
-    return res.status(404).json({
-      error: "Task not found"
-    });
-  }
-
-  return res.status(204).end();
 });
+
 
 module.exports = app;
