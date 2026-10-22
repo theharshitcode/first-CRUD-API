@@ -30,6 +30,7 @@ The API supports creating, reading, updating, and deleting tasks. It uses in-mem
 - JavaScript
 - Swagger UI Express
 - OpenAPI 3.0
+- PostgreSQL
 - Git and GitHub
 
 ## Getting Started
@@ -158,11 +159,59 @@ Save the screenshot in your repository, for example, as `docs/swagger-ui.png`, a
 ![Swagger UI](docs/swagger-ui.png)
 ```
 
-## Data Storage
+## Data Storage - PostgreSQL
 
-This project stores tasks in an in-memory JavaScript array. No database is used.
+# FlyRank CRUD API — PostgreSQL
 
-**Important:** Task data is temporary and resets when the server restarts.
+A task management REST API built using Node.js,
+Express.js, and PostgreSQL.
+
+## Features
+
+- Create a task
+- Retrieve all tasks
+- Retrieve a task by ID
+- Update a task
+- Delete a task
+- Validate request data
+- Persist data across server restarts
+
+## Tech Stack
+
+- JavaScript
+- Node.js
+- Express.js
+- PostgreSQL
+- pg
+
+## Setup
+
+1. Clone this repository.
+2. Install dependencies:
+
+   npm install
+
+3. Create a PostgreSQL database named flyrank_tasks.
+4. Create the tasks table.
+5. Configure DATABASE_URL in your local .env file.
+6. Start the server using the configured npm script.
+
+## Database Schema
+
+The tasks table contains:
+
+- id: Primary key
+- title: Task title
+- done: Boolean completion status
+
+## Example SQL Query
+
+SELECT * FROM tasks;
+
+## Database Screenshot
+
+Add a screenshot of your tasks table here.
+
 
 ## Error Handling and Validation
 
